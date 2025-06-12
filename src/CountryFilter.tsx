@@ -39,14 +39,11 @@ export const CountryFilter = ({
   return (
     <TextInput
       testID='text-input-country-filter'
-      autoCorrect={false}
       placeholderTextColor={filterPlaceholderTextColor}
       style={[
         styles.input,
         { fontFamily, fontSize, color: onBackgroundTextColor },
       ]}
-      placeholder={placeholder}
-      autoFocus={autoFocus}
       {...props}
     />
   )
