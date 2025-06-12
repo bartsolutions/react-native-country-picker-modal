@@ -22,18 +22,26 @@ interface State {
   filterFocus?: boolean
 }
 
-const renderFlagButton = (
-  props: FlagButton['props'] & CountryPickerProps['renderFlagButton'],
-): ReactNode =>
+interface RenderFlagButtonProps
+  extends React.ComponentProps<typeof FlagButton> {
+  renderFlagButton?(props: React.ComponentProps<typeof FlagButton>): ReactNode
+}
+
+interface RenderCountryFilterProps
+  extends React.ComponentProps<typeof CountryFilter> {
+  renderCountryFilter?(
+    props: React.ComponentProps<typeof CountryFilter>,
+  ): ReactNode
+}
+
+const renderFlagButton = (props: RenderFlagButtonProps): ReactNode =>
   props.renderFlagButton ? (
     props.renderFlagButton(props)
   ) : (
     <FlagButton {...props} />
   )
 
-const renderFilter = (
-  props: CountryFilter['props'] & CountryPickerProps['renderCountryFilter'],
-): ReactNode =>
+const renderFilter = (props: RenderCountryFilterProps): ReactNode =>
   props.renderCountryFilter ? (
     props.renderCountryFilter(props)
   ) : (
@@ -70,16 +78,18 @@ interface CountryPickerProps {
   closeButtonImage?: ImageSourcePropType
   closeButtonStyle?: StyleProp<ViewStyle>
   closeButtonImageStyle?: StyleProp<ImageStyle>
-  renderFlagButton?(props: FlagButton['props']): ReactNode
-  renderCountryFilter?(props: CountryFilter['props']): ReactNode
+  renderFlagButton?(props: React.ComponentProps<typeof FlagButton>): ReactNode
+  renderCountryFilter?(
+    props: React.ComponentProps<typeof CountryFilter>,
+  ): ReactNode
   onSelect(country: Country): void
-  onOpen?(): void
-  onClose?(): void
+  onOpen?: () => void
+  onClose?: () => void
 }
 
 export const CountryPicker = (props: CountryPickerProps) => {
   const {
-    allowFontScaling,
+    allowFontScaling = true,
     countryCode,
     region,
     subregion,
@@ -97,11 +107,11 @@ export const CountryPicker = (props: CountryPickerProps) => {
     withCallingCodeButton,
     withCurrencyButton,
     containerButtonStyle,
-    withAlphaFilter,
-    withCallingCode,
+    withAlphaFilter= false,
+    withCallingCode= false,
     withCurrency,
     withFlag,
-    withModal,
+    withModal= true,
     disableNativeModal,
     withFlagButton,
     onClose: handleClose,
@@ -110,7 +120,7 @@ export const CountryPicker = (props: CountryPickerProps) => {
     closeButtonStyle,
     closeButtonImageStyle,
     excludeCountries,
-    placeholder,
+    placeholder = 'Select Country',
     preferredCountries,
   } = props
   const [state, setState] = useState<State>({
@@ -161,7 +171,7 @@ export const CountryPicker = (props: CountryPickerProps) => {
     renderFlagButton: renderButton,
     onOpen,
     containerButtonStyle,
-    placeholder,
+    placeholder: placeholder || 'Select Country',
   }
 
   useEffect(() => {
@@ -176,10 +186,12 @@ export const CountryPicker = (props: CountryPickerProps) => {
       preferredCountries,
       withAlphaFilter,
     )
-      .then(countries => cancel ? null : setCountries(countries))
+      .then((countries) => (cancel ? null : setCountries(countries)))
       .catch(console.warn)
-    
-    return () => cancel = true
+
+    return () => {
+      cancel = true
+    }
   }, [translation, withEmoji])
 
   return (
@@ -199,7 +211,7 @@ export const CountryPicker = (props: CountryPickerProps) => {
             closeButtonStyle,
             withCloseButton,
           }}
-          renderFilter={(props: CountryFilter['props']) =>
+          renderFilter={(props) =>
             renderFilter({
               ...props,
               allowFontScaling,
@@ -232,10 +244,3 @@ export const CountryPicker = (props: CountryPickerProps) => {
   )
 }
 
-CountryPicker.defaultProps = {
-  withModal: true,
-  withAlphaFilter: false,
-  withCallingCode: false,
-  placeholder: 'Select Country',
-  allowFontScaling: true,
-}

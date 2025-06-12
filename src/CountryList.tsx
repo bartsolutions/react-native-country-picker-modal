@@ -25,9 +25,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   letters: {
+    flex: 1,
     marginRight: 10,
     backgroundColor: 'transparent',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   letter: {
@@ -93,9 +94,9 @@ const CountryItem = (props: CountryItemProps) => {
   const {
     country,
     onSelect,
-    withFlag,
+    withFlag = true,
     withEmoji,
-    withCallingCode,
+    withCallingCode = false,
     withCurrency,
   } = props
   const extraContent: string[] = []
@@ -109,6 +110,9 @@ const CountryItem = (props: CountryItemProps) => {
   if (withCurrency && country.currency && country.currency.length > 0) {
     extraContent.push(country.currency.join('|'))
   }
+  const countryName =
+    typeof country.name === 'string' ? country.name : country.name.common
+
   return (
     <TouchableOpacity
       key={country.cca2}
@@ -124,7 +128,7 @@ const CountryItem = (props: CountryItemProps) => {
         )}
         <View style={styles.itemCountryName}>
           <CountryText numberOfLines={2} ellipsizeMode='tail'>
-            {country.name}
+            {countryName}
             {extraContent.length > 0 && ` (${extraContent.join(', ')})`}
           </CountryText>
         </View>
@@ -132,17 +136,13 @@ const CountryItem = (props: CountryItemProps) => {
     </TouchableOpacity>
   )
 }
-CountryItem.defaultProps = {
-  withFlag: true,
-  withCallingCode: false,
-}
 const MemoCountryItem = memo<CountryItemProps>(CountryItem)
 
-const renderItem = (props: Omit<CountryItemProps, 'country'>) => ({
-  item: country,
-}: ListRenderItemInfo<Country>) => (
-  <MemoCountryItem {...{ country, ...props }} />
-)
+const renderItem =
+  (props: Omit<CountryItemProps, 'country'>) =>
+  ({ item: country }: ListRenderItemInfo<Country>) => (
+    <MemoCountryItem {...{ country, ...props }} />
+  )
 
 interface CountryListProps {
   data: Country[]
@@ -156,8 +156,6 @@ interface CountryListProps {
   flatListProps?: FlatListProps<Country>
   onSelect(country: Country): void
 }
-
-const keyExtractor = (item: Country) => item.cca2
 
 const ItemSeparatorComponent = () => {
   const { primaryColorVariant } = useTheme()
@@ -193,16 +191,12 @@ export const CountryList = (props: CountryListProps) => {
     const index = indexLetter.indexOf(letter)
     setLetter(letter)
     if (flatListRef.current) {
-      flatListRef.current!.scrollToIndex({ animated, index })
+      flatListRef.current.scrollToIndex({ animated, index })
     }
   }
-  const onScrollToIndexFailed = (_info: {
-    index: number
-    highestMeasuredFrameIndex: number
-    averageItemLength: number
-  }) => {
+  const onScrollToIndexFailed = () => {
     if (flatListRef.current) {
-      flatListRef.current!.scrollToEnd()
+      flatListRef.current.scrollToEnd()
       scrollTo(letter)
     }
   }
@@ -218,7 +212,6 @@ export const CountryList = (props: CountryListProps) => {
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <FlatList
-        onScrollToIndexFailed
         ref={flatListRef}
         testID='list-countries'
         keyboardShouldPersistTaps='handled'
@@ -238,7 +231,7 @@ export const CountryList = (props: CountryListProps) => {
         })}
         {...{
           data: search(filter, data),
-          keyExtractor,
+          keyExtractor: (item: Country) => item?.cca2,
           onScrollToIndexFailed,
           ItemSeparatorComponent,
           initialNumToRender,
@@ -247,6 +240,7 @@ export const CountryList = (props: CountryListProps) => {
       />
       {withAlphaFilter && (
         <ScrollView
+          scrollEnabled={false}
           contentContainerStyle={styles.letters}
           keyboardShouldPersistTaps='always'
         >
@@ -257,8 +251,4 @@ export const CountryList = (props: CountryListProps) => {
       )}
     </View>
   )
-}
-
-CountryList.defaultProps = {
-  filterFocus: undefined,
 }
